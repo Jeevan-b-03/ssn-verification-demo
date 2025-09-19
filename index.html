@@ -3,28 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Employee Records • SSN Verification (Demo)</title>
+  <title>Employee Records • SSN Verification (Inline Add Flow)</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="topbar">
-    <h1>Employee Records — SSN Authorization Demo</h1>
+    <h1>Employee Records — Inline SSN Verification</h1>
     <nav>
-      <button id="nav-employees" class="nav-btn active">Employees</button>
-      <button id="nav-add" class="nav-btn">Add Employee</button>
-      <button id="nav-audit" class="nav-btn">Audit Log</button>
+      <button id="nav-employees" class="nav-btn active" type="button">Employees</button>
+      <button id="nav-add" class="nav-btn" type="button">Add Employee</button>
+      <button id="nav-audit" class="nav-btn" type="button">Audit Log</button>
     </nav>
   </header>
 
   <main>
+    <!-- Employees List -->
     <section id="view-employees" class="view">
       <div class="toolbar">
         <input id="search" placeholder="Search by name or last 4 of SSN…" />
         <div class="spacer"></div>
         <button id="exportBtn" class="secondary">Export JSON</button>
-        <label class="file-label">
-          Import JSON <input type="file" id="importFile" accept="application/json" />
-        </label>
+        <label class="file-label">Import JSON <input type="file" id="importFile" accept="application/json" /></label>
       </div>
       <div class="card">
         <table id="employeeTable">
@@ -32,9 +31,10 @@
             <tr>
               <th>Name</th>
               <th>DOB</th>
+              <th>Employee ID</th>
               <th>SSN (masked)</th>
               <th>Status</th>
-              <th>Last Verified</th>
+              <th>Verified At</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -43,32 +43,49 @@
       </div>
     </section>
 
+    <!-- Add Employee with inline SSN verification -->
     <section id="view-add" class="view hidden">
       <div class="card">
-        <h2>Add Employee</h2>
-        <p class="muted">This demo stores data locally in your browser (no server). SSNs are hashed and masked; never store full SSNs in plaintext.</p>
-        <form id="addForm">
+        <h2>Add Employee (Verify SSN before Save)</h2>
+        <form id="addForm" autocomplete="off">
           <div class="grid">
             <label>First Name<input name="firstName" required /></label>
             <label>Last Name<input name="lastName" required /></label>
             <label>Date of Birth<input name="dob" type="date" required /></label>
-            <label>SSN<input name="ssn" inputmode="numeric" maxlength="11" placeholder="123-45-6789" required /></label>
             <label>Employee ID<input name="employeeId" placeholder="EMP-001" /></label>
             <label>Department<input name="department" placeholder="IT" /></label>
           </div>
+
+          <fieldset class="ssn-fieldset">
+            <legend>Social Security Number <span class="muted">(format: xxx‑xx‑xxxx)</span></legend>
+            <div class="ssn-group" aria-label="Social Security Number">
+              <input id="ssn1" class="ssn" inputmode="numeric" pattern="\d{3}" maxlength="3" aria-label="First 3 digits" required />
+              <span class="dash">-</span>
+              <input id="ssn2" class="ssn" inputmode="numeric" pattern="\d{2}" maxlength="2" aria-label="Next 2 digits" required />
+              <span class="dash">-</span>
+              <input id="ssn3" class="ssn" inputmode="numeric" pattern="\d{4}" maxlength="4" aria-label="Last 4 digits" required />
+            </div>
+            <p class="tiny muted">Only digits allowed. Auto‑advance between boxes. Paste full SSN to auto‑split.</p>
+          </fieldset>
+
           <div class="consent-box">
             <input type="checkbox" id="consentAdd" />
-            <label for="consentAdd">I acknowledge we will obtain and retain SSA-89 written consent before submitting this SSN for verification.</label>
+            <label for="consentAdd">I confirm SSA‑89 written consent is on file for this verification request.</label>
           </div>
+
+          <div class="verify-status" id="verifyStatus" role="status" aria-live="polite"></div>
+
           <div class="actions">
-            <button type="submit" class="primary">Save</button>
+            <button type="button" id="verifyBtn" class="primary">Verify SSN</button>
+            <button type="submit" id="saveBtn" class="secondary" disabled>Save Employee</button>
             <button type="reset" class="secondary">Reset</button>
           </div>
         </form>
-        <p class="tiny">Reference: SSA-89 consent form instructions and eCBSV consent requirements (see README for links).</p>
+        <p class="tiny muted">This demo uses a mock verifier. In production, call SSA’s SSNVS (for W‑2 purposes) or eCBSV (API with consent) per eligibility. Do not use real SSNs.</p>
       </div>
     </section>
 
+    <!-- Audit Log -->
     <section id="view-audit" class="view hidden">
       <div class="card">
         <h2>Audit Log</h2>
@@ -88,15 +105,16 @@
     </section>
   </main>
 
+  <!-- Re‑Verify Modal (still available after save) -->
   <dialog id="verifyModal">
     <form method="dialog" class="modal">
       <h3>Verify SSN</h3>
       <p id="verifyEmp"></p>
       <label class="consent-box">
         <input id="consentCheckbox" type="checkbox" />
-        <span>I confirm SSA-89 written consent is on file for this verification request.</span>
+        <span>I confirm SSA‑89 written consent is on file for this verification request.</span>
       </label>
-      <div class="muted tiny">Demo uses a <strong>mock</strong> verifier with deterministic but fake results. In production, call SSA’s SSNVS (for W-2 purposes) or eCBSV (with consent) according to eligibility.</div>
+      <div class="muted tiny">Demo uses a <strong>mock</strong> verifier. In production, integrate SSA services per policy.</div>
       <menu>
         <button value="cancel" class="secondary">Cancel</button>
         <button id="runVerifyBtn" value="default" class="primary">Run Verification</button>
@@ -105,7 +123,7 @@
   </dialog>
 
   <footer>
-    <p class="tiny">Demo only. Do not use with real SSNs. © 2025</p>
+    <p class="tiny">Demo only. © 2025</p>
   </footer>
 
   <script src="app.js"></script>
