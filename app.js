@@ -113,7 +113,12 @@ function handlePaste(e){
   if (digits.length === 9){ e.preventDefault(); els.ssn1.value = digits.slice(0,3); els.ssn2.value = digits.slice(3,5); els.ssn3.value = digits.slice(5); els.ssn3.focus(); }
 }
 function getSSN(){ return `${els.ssn1.value}-${els.ssn2.value}-${els.ssn3.value}`; }
-function validSSNFormat(){ return /^\d{{3}}-\d{{2}}-\d{{4}}$/.test(getSSN()); }
+function validSSNFormat(){
+  const s = getSSN().trim();
+  const normalized = s.replace(/[–—‐‑−]/g, '-'); // normalize any non-ASCII hyphen
+  return /^\d{3}-\d{2}-\d{4}$/.test(normalized);
+}
+
 
 // Inline verify state for Add Form
 let addVerifyResult = null; // {status,message,at}
@@ -152,7 +157,7 @@ els.verifyBtn.addEventListener('click', ()=>{
   if (!els.consentAdd.checked){ setVerifyStatus('error','You must confirm SSA‑89 consent is on file.'); return; }
   if (!validSSNFormat()){ setVerifyStatus('error','SSN must be in xxx‑xx‑xxxx format.'); return; }
 
-  const ssn = getSSN();
+  const ssn = getSSN().replace(/[–—‐‑−]/g, '-');
   const res = mockVerify(ssn, fullName, dob);
   addVerifyResult = { ...res, at: nowISO(), ssn };
 
