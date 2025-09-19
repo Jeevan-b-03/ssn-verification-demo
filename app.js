@@ -24,10 +24,6 @@ const els = {
   search: document.getElementById('search'),
   exportBtn: document.getElementById('exportBtn'),
   importFile: document.getElementById('importFile'),
-  verifyModal: document.getElementById('verifyModal'),
-  verifyEmp: document.getElementById('verifyEmp'),
-  runVerifyBtn: document.getElementById('runVerifyBtn'),
-  consentCheckbox: document.getElementById('consentCheckbox'),
   consentAdd: document.getElementById('consentAdd'),
   verifyBtn: document.getElementById('verifyBtn'),
   saveBtn: document.getElementById('saveBtn'),
@@ -50,8 +46,8 @@ async function sha256Hex(str) {
 }
 
 function nowISO(){ return new Date().toISOString(); }
-function save(){ localStorage.setItem('ssn-demo-inline-brand', JSON.stringify(store)); }
-function load(){ try{ Object.assign(store, JSON.parse(localStorage.getItem('ssn-demo-inline-brand')||'{}')); }catch{} }
+function save(){ localStorage.setItem('ssn-demo-inline-brand-v2', JSON.stringify(store)); }
+function load(){ try{ Object.assign(store, JSON.parse(localStorage.getItem('ssn-demo-inline-brand-v2')||'{}')); }catch{} }
 function addAudit(action, employeeName, result){ store.audit.unshift({ ts: nowISO(), user: CURRENT_USER, action, employeeName, result }); }
 
 function renderEmployees(){
@@ -119,12 +115,11 @@ function validSSNFormat(){
   return /^\d{3}-\d{2}-\d{4}$/.test(normalized);
 }
 
-
-// Inline verify state for Add Form
-let addVerifyResult = null; // {status,message,at}
+let addVerifyResult = null; // {status,message,at,ssn}
 
 function setVerifyStatus(kind, msg){
-  els.verifyStatus.innerHTML = `<span class="${{ok:'ok', error:'error', warn:'warn'}[kind]}">${msg}</span>`;
+  const map = { ok:'ok', error:'error', warn:'warn' };
+  els.verifyStatus.innerHTML = `<span class="${map[kind]}">${msg}</span>`;
 }
 
 function resetVerifyState(){ addVerifyResult = null; els.saveBtn.disabled = true; setVerifyStatus('warn','Please verify SSN before saving.'); }
@@ -203,7 +198,6 @@ els.addForm.addEventListener('submit', async (e)=>{
   addAudit('CREATE', `${firstName} ${lastName}`, 'created with pre‑verification');
   save();
 
-  // Reset form for next entry
   els.addForm.reset();
   [els.ssn1, els.ssn2, els.ssn3].forEach(i=>i.value='');
   resetVerifyState();
@@ -236,7 +230,7 @@ els.search.addEventListener('input', renderEmployees);
 els.exportBtn.addEventListener('click', ()=>{
   const blob = new Blob([JSON.stringify(store, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = 'ssn-demo-inline-brand-data.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  a.href = url; a.download = 'ssn-demo-inline-brand-v2-data.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
 });
 
 els.importFile.addEventListener('change', (e)=>{
