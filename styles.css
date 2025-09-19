@@ -1,0 +1,36 @@
+*{box-sizing:border-box}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;margin:0;background:#0b1220;color:#e7eaf0}a{color:#6fb1ff}
+.topbar{display:flex;align-items:center;gap:2rem;padding:1rem 1.5rem;background:#0e172a;border-bottom:1px solid #1e293b}
+.topbar h1{font-size:1.1rem;margin:0;color:#cbd5e1}
+nav{display:flex;gap:.5rem}
+.nav-btn{background:#1e293b;color:#cbd5e1;border:1px solid #334155;padding:.5rem .75rem;border-radius:.5rem;cursor:pointer}
+.nav-btn.active,.nav-btn:hover{background:#334155}
+main{padding:1rem;max-width:1100px;margin:0 auto}
+.toolbar{display:flex;gap:.75rem;align-items:center;margin:.5rem 0}
+.toolbar .spacer{flex:1}
+input,select,button,label{font:inherit}
+input,select{background:#0b1220;color:#e7eaf0;border:1px solid #334155;border-radius:.5rem;padding:.5rem}
+button.primary{background:#2563eb;border:1px solid #1d4ed8;color:white}
+button.secondary{background:#0b1220;border:1px solid #334155;color:#e7eaf0}
+button{padding:.5rem .9rem;border-radius:.5rem;cursor:pointer}
+.card{background:#111827;border:1px solid #1f2937;border-radius:.75rem;padding:1rem}
+.hidden{display:none}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+label{display:flex;flex-direction:column;gap:.25rem}
+.consent-box{display:flex;align-items:flex-start;gap:.5rem;margin:.75rem 0}
+.actions{display:flex;gap:.5rem;margin-top:.5rem}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:.65rem;border-bottom:1px solid #1f2937;text-align:left}
+th{color:#9ca3af}
+.status{padding:.2rem .5rem;border-radius:.4rem;font-size:.8rem;display:inline-block}
+.status.pending{background:#2b2f3a;color:#cbd5e1}
+.status.verified{background:#063c22;color:#d1fae5}
+.status.mismatch{background:#3b0a0a;color:#fecaca}
+.status.deceased{background:#4b2b00;color:#fde68a}
+.muted{color:#94a3b8}
+.tiny{font-size:.8rem}
+.file-label{display:inline-flex;align-items:center;gap:.5rem;background:#0b1220;border:1px dashed #334155;color:#e7eaf0;padding:.45rem .7rem;border-radius:.5rem;cursor:pointer}
+.file-label input{display:none}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.modal{min-width:360px;max-width:480px}
+footer{padding:1rem;color:#64748b;text-align:center}

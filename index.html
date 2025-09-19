@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Records • SSN Verification (Demo)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Employee Records — SSN Authorization Demo</h1>
+    <nav>
+      <button id="nav-employees" class="nav-btn active">Employees</button>
+      <button id="nav-add" class="nav-btn">Add Employee</button>
+      <button id="nav-audit" class="nav-btn">Audit Log</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="view-employees" class="view">
+      <div class="toolbar">
+        <input id="search" placeholder="Search by name or last 4 of SSN…" />
+        <div class="spacer"></div>
+        <button id="exportBtn" class="secondary">Export JSON</button>
+        <label class="file-label">
+          Import JSON <input type="file" id="importFile" accept="application/json" />
+        </label>
+      </div>
+      <div class="card">
+        <table id="employeeTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>DOB</th>
+              <th>SSN (masked)</th>
+              <th>Status</th>
+              <th>Last Verified</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-add" class="view hidden">
+      <div class="card">
+        <h2>Add Employee</h2>
+        <p class="muted">This demo stores data locally in your browser (no server). SSNs are hashed and masked; never store full SSNs in plaintext.</p>
+        <form id="addForm">
+          <div class="grid">
+            <label>First Name<input name="firstName" required /></label>
+            <label>Last Name<input name="lastName" required /></label>
+            <label>Date of Birth<input name="dob" type="date" required /></label>
+            <label>SSN<input name="ssn" inputmode="numeric" maxlength="11" placeholder="123-45-6789" required /></label>
+            <label>Employee ID<input name="employeeId" placeholder="EMP-001" /></label>
+            <label>Department<input name="department" placeholder="IT" /></label>
+          </div>
+          <div class="consent-box">
+            <input type="checkbox" id="consentAdd" />
+            <label for="consentAdd">I acknowledge we will obtain and retain SSA-89 written consent before submitting this SSN for verification.</label>
+          </div>
+          <div class="actions">
+            <button type="submit" class="primary">Save</button>
+            <button type="reset" class="secondary">Reset</button>
+          </div>
+        </form>
+        <p class="tiny">Reference: SSA-89 consent form instructions and eCBSV consent requirements (see README for links).</p>
+      </div>
+    </section>
+
+    <section id="view-audit" class="view hidden">
+      <div class="card">
+        <h2>Audit Log</h2>
+        <table id="auditTable">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Employee</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="verifyModal">
+    <form method="dialog" class="modal">
+      <h3>Verify SSN</h3>
+      <p id="verifyEmp"></p>
+      <label class="consent-box">
+        <input id="consentCheckbox" type="checkbox" />
+        <span>I confirm SSA-89 written consent is on file for this verification request.</span>
+      </label>
+      <div class="muted tiny">Demo uses a <strong>mock</strong> verifier with deterministic but fake results. In production, call SSA’s SSNVS (for W-2 purposes) or eCBSV (with consent) according to eligibility.</div>
+      <menu>
+        <button value="cancel" class="secondary">Cancel</button>
+        <button id="runVerifyBtn" value="default" class="primary">Run Verification</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <footer>
+    <p class="tiny">Demo only. Do not use with real SSNs. © 2025</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
