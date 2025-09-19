@@ -52,7 +52,7 @@ th{color:#475569;background:var(--bg-soft)}
 .ssn-fieldset{margin:1rem 0;border:1px solid var(--border);border-radius:var(--radius);padding:1rem;background:#fff}
 .ssn-fieldset legend{padding:0 .5rem;color:#334155}
 .ssn-group{display:flex;align-items:center;gap:.5rem}
-.ssn-group .ssn{width:7.2ch; /* bigger */ text-align:center;letter-spacing:.12ch;font-size:1.15rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:10px}
+.ssn-group .ssn{width:7.2ch;text-align:center;letter-spacing:.12ch;font-size:1.15rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:10px}
 .ssn-group .ssn#ssn3{width:9ch}
 .ssn-group .dash{color:#64748b;font-weight:600}
 
