@@ -3,16 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Employee Records • SSN Verification (Inline Add Flow)</title>
+  <title>Employee Records • Inline SSN Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="/favicon.svg" />
 </head>
 <body>
   <header class="topbar">
-    <h1>Employee Records — Inline SSN Verification</h1>
-    <nav>
+    <div class="brand">
+      <img src="logo.svg" alt="Brand logo" class="logo"/>
+      <div class="titles">
+        <strong>Employee Records</strong>
+        <span class="subtitle">Inline SSN Verification Demo</span>
+      </div>
+    </div>
+    <nav class="nav">
       <button id="nav-employees" class="nav-btn active" type="button">Employees</button>
       <button id="nav-add" class="nav-btn" type="button">Add Employee</button>
       <button id="nav-audit" class="nav-btn" type="button">Audit Log</button>
+      <button id="nav-compliance" class="nav-btn" type="button">Compliance</button>
     </nav>
   </header>
 
@@ -59,11 +70,11 @@
           <fieldset class="ssn-fieldset">
             <legend>Social Security Number <span class="muted">(format: xxx‑xx‑xxxx)</span></legend>
             <div class="ssn-group" aria-label="Social Security Number">
-              <input id="ssn1" class="ssn" inputmode="numeric" pattern="\d{3}" maxlength="3" aria-label="First 3 digits" required />
+              <input id="ssn1" class="ssn" inputmode="numeric" maxlength="3" aria-label="First 3 digits" required />
               <span class="dash">-</span>
-              <input id="ssn2" class="ssn" inputmode="numeric" pattern="\d{2}" maxlength="2" aria-label="Next 2 digits" required />
+              <input id="ssn2" class="ssn" inputmode="numeric" maxlength="2" aria-label="Next 2 digits" required />
               <span class="dash">-</span>
-              <input id="ssn3" class="ssn" inputmode="numeric" pattern="\d{4}" maxlength="4" aria-label="Last 4 digits" required />
+              <input id="ssn3" class="ssn" inputmode="numeric" maxlength="4" aria-label="Last 4 digits" required />
             </div>
             <p class="tiny muted">Only digits allowed. Auto‑advance between boxes. Paste full SSN to auto‑split.</p>
           </fieldset>
@@ -81,7 +92,7 @@
             <button type="reset" class="secondary">Reset</button>
           </div>
         </form>
-        <p class="tiny muted">This demo uses a mock verifier. In production, call SSA’s SSNVS (for W‑2 purposes) or eCBSV (API with consent) per eligibility. Do not use real SSNs.</p>
+        <p class="tiny muted">Demo uses a mock verifier. In production, integrate SSA services per policy. Do not use real SSNs.</p>
       </div>
     </section>
 
@@ -103,27 +114,45 @@
         </table>
       </div>
     </section>
+
+    <!-- Compliance Page -->
+    <section id="view-compliance" class="view hidden">
+      <div class="card">
+        <h2>Compliance & Usage</h2>
+        <p class="muted">This page summarizes key compliance rules for Social Security Number verification integrations. Always consult official SSA documentation and your legal team.</p>
+        <h3>SSNVS (Social Security Number Verification Service)</h3>
+        <ul>
+          <li>For <strong>wage reporting (Form W‑2) purposes only</strong>.</li>
+          <li>Verify up to 10 names/SSNs online or upload files (up to 250k) for next‑business‑day results.</li>
+        </ul>
+        <p>Official page: <a href="https://www.ssa.gov/employer/ssnv.htm" target="_blank" rel="noopener">ssa.gov/employer/ssnv.htm</a></p>
+        <h3>eCBSV (electronic Consent Based SSN Verification)</h3>
+        <ul>
+          <li><strong>API</strong> returns yes/no match and death indicator (if present).</li>
+          <li>Requires the SSN holder’s <strong>written consent (SSA‑89)</strong>.</li>
+          <li>Limited to <strong>Permitted Entities</strong> (e.g., financial institutions and their service providers).</li>
+        </ul>
+        <p>Overview: <a href="https://www.ssa.gov/dataexchange/eCBSV/" target="_blank" rel="noopener">ssa.gov/dataexchange/eCBSV/</a></p>
+        <h3>SSA‑89 (Written Consent)</h3>
+        <ul>
+          <li>One‑time use; typically valid for 90 days unless otherwise initialed by the signer.</li>
+          <li>Must include name, DOB, SSN, purpose, and signature (wet or electronic that meets requirements).</li>
+        </ul>
+        <p>Form: <a href="https://www.ssa.gov/forms/ssa-89.pdf" target="_blank" rel="noopener">ssa.gov/forms/ssa-89.pdf</a> · Consent guidance: <a href="https://www.ssa.gov/dataexchange/eCBSV/written_consent.html" target="_blank" rel="noopener">eCBSV Written Consent</a></p>
+        <h3>Data Handling</h3>
+        <ul>
+          <li>Do <strong>not</strong> store plaintext SSNs. Store masked display + one‑way hash (or encrypt at rest) and enforce least privilege.</li>
+          <li>Keep consent artifacts and <strong>immutable audit logs</strong> for who/when/why each verification occurred.</li>
+        </ul>
+        <div class="callout">
+          <strong>Disclaimer:</strong> This is a demo UI. Replace the mock verifier with SSA services only if your organization meets eligibility and consent requirements.
+        </div>
+      </div>
+    </section>
   </main>
 
-  <!-- Re‑Verify Modal (still available after save) -->
-  <dialog id="verifyModal">
-    <form method="dialog" class="modal">
-      <h3>Verify SSN</h3>
-      <p id="verifyEmp"></p>
-      <label class="consent-box">
-        <input id="consentCheckbox" type="checkbox" />
-        <span>I confirm SSA‑89 written consent is on file for this verification request.</span>
-      </label>
-      <div class="muted tiny">Demo uses a <strong>mock</strong> verifier. In production, integrate SSA services per policy.</div>
-      <menu>
-        <button value="cancel" class="secondary">Cancel</button>
-        <button id="runVerifyBtn" value="default" class="primary">Run Verification</button>
-      </menu>
-    </form>
-  </dialog>
-
   <footer>
-    <p class="tiny">Demo only. © 2025</p>
+    <p class="tiny">Brand placeholders active · Demo only · © 2025</p>
   </footer>
 
   <script src="app.js"></script>
