@@ -1,4 +1,4 @@
-// Inline SSN verification + email + duplicate check + merge (demo)
+// v4: add EMP ID to duplicate check (email + deterministic SSN + EMP ID)
 // Demo only: uses mock verification. Do not use real SSNs.
 
 const CURRENT_USER = 'hr-admin@demo';
@@ -53,12 +53,13 @@ async function sha256Hex(str) {
 }
 
 function nowISO(){ return new Date().toISOString(); }
-function save(){ localStorage.setItem('ssn-demo-inline-brand-v3', JSON.stringify(store)); }
-function load(){ try{ Object.assign(store, JSON.parse(localStorage.getItem('ssn-demo-inline-brand-v3')||'{}')); }catch{} }
+function save(){ localStorage.setItem('ssn-demo-inline-brand-v4', JSON.stringify(store)); }
+function load(){ try{ Object.assign(store, JSON.parse(localStorage.getItem('ssn-demo-inline-brand-v4')||'{}')); }catch{} }
 function addAudit(action, employeeName, result){ store.audit.unshift({ ts: nowISO(), user: CURRENT_USER, action, employeeName, result }); }
 
 function normalizeEmail(e){ return (e||'').trim().toLowerCase(); }
 function isValidEmail(e){ const v = normalizeEmail(e); return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+function normalizeEmpId(id){ return (id==null? '': String(id)).trim().toUpperCase().replace(/[^A-Z0-9]/g,''); }
 
 function getSSN(){ return `${els.ssn1.value}-${els.ssn2.value}-${els.ssn3.value}`; }
 function validSSNFormat(){ const s = getSSN().trim(); const normalized = s.replace(/[–—‐‑−]/g,'-'); return /^\d{3}-\d{2}-\d{4}$/.test(normalized); }
@@ -73,7 +74,8 @@ function renderEmployees(){
   els.tableBody.innerHTML = store.employees.filter(e => {
     const name = `${e.firstName} ${e.lastName}`.toLowerCase();
     const email = (e.email||'').toLowerCase();
-    return !q || name.includes(q) || email.includes(q) || (e.ssnMasked||'').includes(q);
+    const empid = (e.employeeId||'').toLowerCase();
+    return !q || name.includes(q) || email.includes(q) || empid.includes(q) || (e.ssnMasked||'').includes(q);
   }).map(e => {
     const status = e.verification?.status || 'pending';
     const label = { verified:'Verified (match)', mismatch:'Mismatch', deceased:'Deceased', pending:'Pending' }[status] || 'Pending';
@@ -215,9 +217,12 @@ function openMerge(existing, incoming, onConfirm){
       const choice = document.querySelector(`input[name="use-${k}"]:checked`)?.value || 'existing';
       if (choice==='new') updated[k] = incoming[k] ?? existing[k];
     });
+    // Keep latest verification if incoming is verified
     if (incoming.verification?.status === 'verified') {
       updated.verification = incoming.verification;
     }
+    // Recompute normalized empId after potential update
+    updated.empIdNorm = normalizeEmpId(updated.employeeId || '');
     onConfirm(updated);
     els.mergeModal.close();
   };
@@ -249,26 +254,34 @@ els.addForm.addEventListener('submit', async (e)=>{
   const salt = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
   const ssnHash = await sha256Hex(ssnDigits + ':' + salt); // per-record salt hash
   const ssnDet = await ssnDeterministicDigest(ssnDigits);   // deterministic digest (demo)
+  const empIdNorm = normalizeEmpId(employeeId);
 
   const incoming = {
     id: crypto.randomUUID(), firstName, lastName, dob, employeeId, department,
     email: emailNorm,
+    empIdNorm,
     ssnMasked: maskSSN(ssnDigits),
-    ssnHash, salt, ssnDet, // store both
+    ssnHash, salt, ssnDet, // store both hashes
     verification: { status:'verified', message:addVerifyResult.message, at:addVerifyResult.at, by: CURRENT_USER }
   };
 
-  // Duplicate detection: deterministic SSN OR email
-  const dup = store.employees.find(emp => emp.ssnDet === ssnDet || normalizeEmail(emp.email) === emailNorm);
+  // Duplicate detection order: SSN (strongest) → Email → EMP ID
+  const dup = store.employees.find(emp =>
+    emp.ssnDet === ssnDet ||
+    normalizeEmail(emp.email) === emailNorm ||
+    normalizeEmpId(emp.employeeId) === empIdNorm
+  );
 
   if (dup){
     openMerge(dup, incoming, (merged)=>{
-      // keep identity fields (id, ssnHash, salt, ssnDet, ssnMasked) from existing
+      // keep identity (id, ssnHash, salt, ssnDet, ssnMasked) from existing
       merged.id = dup.id;
       merged.ssnHash = dup.ssnHash;
       merged.salt = dup.salt;
       merged.ssnDet = dup.ssnDet;
       merged.ssnMasked = dup.ssnMasked;
+      // also keep existing empIdNorm in sync
+      merged.empIdNorm = normalizeEmpId(merged.employeeId || '');
 
       const idx = store.employees.findIndex(e=>e.id===dup.id);
       if (idx>=0) store.employees[idx] = merged;
@@ -321,11 +334,15 @@ els.search.addEventListener('input', renderEmployees);
 els.exportBtn.addEventListener('click', ()=>{
   const blob = new Blob([JSON.stringify(store, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = 'ssn-demo-inline-brand-v3-data.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  a.href = url; a.download = 'ssn-demo-inline-brand-v4-data.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
 });
 
 els.importFile.addEventListener('change', (e)=>{
   const f = e.target.files?.[0]; if (!f) return; const r = new FileReader();
-  r.onload = ()=>{ try { const data = JSON.parse(r.result); if (data.employees && data.audit){ store.employees = data.employees; store.audit = data.audit; save(); renderEmployees(); renderAudit(); } else alert('Invalid file'); } catch { alert('Could not parse file'); } };
+  r.onload = ()=>{ try { const data = JSON.parse(r.result); if (data.employees && data.audit){ store.employees = data.employees.map(emp=>({
+            // backfill empIdNorm for older records
+            ...emp,
+            empIdNorm: normalizeEmpId(emp.employeeId||'')
+          })); store.audit = data.audit; save(); renderEmployees(); renderAudit(); } else alert('Invalid file'); } catch { alert('Could not parse file'); } };
   r.readAsText(f);
 });
