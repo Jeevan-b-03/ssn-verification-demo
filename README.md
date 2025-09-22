@@ -1,16 +1,15 @@
-# Inline SSN Verification — Branded Demo (v3)
+# Inline SSN Verification — Branded Demo (v4)
 
 **Demo only — do not use real SSNs.**
 
-### What’s new
-- **Email field** with live validation.
-- **Duplicate detection** by **email** or **deterministic SSN digest** (demo-safe).
-- **Merge dialog** to selectively update existing records when duplicates are found.
-- Keeps **verify-before-save** rule, larger segmented SSN boxes, and compliance page.
+### What’s new in v4
+- **Duplicate detection** now includes **EMP ID** (case-insensitive, non-alphanumeric ignored), in addition to **email** and **deterministic SSN digest**.
+- Search bar updated to match by **EMP ID** too.
+- Merge flow recomputes the normalized EMP ID after updates.
 
 ### Deploy
-- Push these files to your GitHub repo and let **Azure Static Web Apps** auto-deploy (App Location `/`).
+- Push these files to your GitHub repo (App Location `/`) and let **Azure Static Web Apps** auto-deploy.
 
 ### Notes
-- Deterministic SSN digest uses a demo pepper in the **front-end**. In production, compute this on the **server** with a secret.
+- Deterministic SSN digest should be computed **server-side** with a secret in production.
 - Continue storing **masked SSN + salted hash**; never store plaintext.

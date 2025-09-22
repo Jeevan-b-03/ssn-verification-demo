@@ -30,7 +30,7 @@
   <main>
     <section id="view-employees" class="view">
       <div class="toolbar">
-        <input id="search" placeholder="Search by name, email or last 4 of SSN…" />
+        <input id="search" placeholder="Search by name, email, EMP ID or last 4 of SSN…" />
         <div class="spacer"></div>
         <button id="exportBtn" class="secondary">Export JSON</button>
         <label class="file-label">Import JSON <input type="file" id="importFile" accept="application/json" /></label>
@@ -144,36 +144,35 @@
         </div>
       </div>
     </section>
-  </main>
 
-  <!-- Merge Dialog -->
-  <dialog id="mergeModal">
-    <form method="dialog" class="modal">
-      <h3>Employee Already Exists</h3>
-      <p id="mergeTitle" class="muted tiny">A record with the same SSN (last‑4) or email exists. Choose fields to update on the existing record.</p>
-      <div class="card" style="max-height:50vh;overflow:auto">
-        <table class="merge-table">
-          <thead>
-            <tr>
-              <th>Field</th>
-              <th>Existing</th>
-              <th>New</th>
-              <th>Use</th>
-            </tr>
-          </thead>
-          <tbody id="mergeBody"></tbody>
-        </table>
-      </div>
-      <menu>
-        <button value="cancel" class="secondary">Cancel</button>
-        <button id="mergeConfirmBtn" value="default" class="primary">Merge & Update</button>
-      </menu>
-    </form>
-  </dialog>
+    <!-- Merge Dialog -->
+    <dialog id="mergeModal">
+      <form method="dialog" class="modal">
+        <h3>Employee Already Exists</h3>
+        <p id="mergeTitle" class="muted tiny">A record with the same SSN (deterministic), email, or EMP ID exists. Choose fields to update on the existing record.</p>
+        <div class="card" style="max-height:50vh;overflow:auto">
+          <table class="merge-table">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Existing</th>
+                <th>New</th>
+                <th>Use</th>
+              </tr>
+            </thead>
+            <tbody id="mergeBody"></tbody>
+          </table>
+        </div>
+        <menu>
+          <button value="cancel" class="secondary">Cancel</button>
+          <button id="mergeConfirmBtn" value="default" class="primary">Merge & Update</button>
+        </menu>
+      </form>
+    </dialog>
 
-  <footer>
-    <p class="tiny">Brand placeholders active · Demo only · © 2025</p>
-  </footer>
+    <footer>
+      <p class="tiny">Brand placeholders active · Demo only · © 2025</p>
+    </footer>
 
   <script src="app.js"></script>
 </body>
