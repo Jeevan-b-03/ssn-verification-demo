@@ -1,7 +1,8 @@
-// Inline SSN verification on Add Employee
+// Inline SSN verification + email + duplicate check + merge (demo)
 // Demo only: uses mock verification. Do not use real SSNs.
 
 const CURRENT_USER = 'hr-admin@demo';
+const DETERMINISTIC_PEPPER = 'DEMO_PEPPER_v1'; // demo-only; use server secret in production
 
 const store = { employees: [], audit: [] };
 
@@ -10,11 +11,13 @@ const els = {
     employees: document.getElementById('view-employees'),
     add: document.getElementById('view-add'),
     audit: document.getElementById('view-audit'),
+    compliance: document.getElementById('view-compliance'),
   },
   nav: {
     employees: document.getElementById('nav-employees'),
     add: document.getElementById('nav-add'),
     audit: document.getElementById('nav-audit'),
+    compliance: document.getElementById('nav-compliance'),
   },
   tableBody: document.querySelector('#employeeTable tbody'),
   auditBody: document.querySelector('#auditTable tbody'),
@@ -22,17 +25,19 @@ const els = {
   search: document.getElementById('search'),
   exportBtn: document.getElementById('exportBtn'),
   importFile: document.getElementById('importFile'),
-  verifyModal: document.getElementById('verifyModal'),
-  verifyEmp: document.getElementById('verifyEmp'),
-  runVerifyBtn: document.getElementById('runVerifyBtn'),
-  consentCheckbox: document.getElementById('consentCheckbox'),
   consentAdd: document.getElementById('consentAdd'),
   verifyBtn: document.getElementById('verifyBtn'),
   saveBtn: document.getElementById('saveBtn'),
   verifyStatus: document.getElementById('verifyStatus'),
+  email: document.getElementById('email'),
+  emailHelp: document.getElementById('emailHelp'),
   ssn1: document.getElementById('ssn1'),
   ssn2: document.getElementById('ssn2'),
   ssn3: document.getElementById('ssn3'),
+  // merge dialog
+  mergeModal: document.getElementById('mergeModal'),
+  mergeBody: document.getElementById('mergeBody'),
+  mergeConfirmBtn: document.getElementById('mergeConfirmBtn'),
 };
 
 const encoder = new TextEncoder();
@@ -48,14 +53,28 @@ async function sha256Hex(str) {
 }
 
 function nowISO(){ return new Date().toISOString(); }
-function save(){ localStorage.setItem('ssn-demo-inline', JSON.stringify(store)); }
-function load(){ try{ Object.assign(store, JSON.parse(localStorage.getItem('ssn-demo-inline')||'{}')); }catch{} }
+function save(){ localStorage.setItem('ssn-demo-inline-brand-v3', JSON.stringify(store)); }
+function load(){ try{ Object.assign(store, JSON.parse(localStorage.getItem('ssn-demo-inline-brand-v3')||'{}')); }catch{} }
 function addAudit(action, employeeName, result){ store.audit.unshift({ ts: nowISO(), user: CURRENT_USER, action, employeeName, result }); }
+
+function normalizeEmail(e){ return (e||'').trim().toLowerCase(); }
+function isValidEmail(e){ const v = normalizeEmail(e); return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+
+function getSSN(){ return `${els.ssn1.value}-${els.ssn2.value}-${els.ssn3.value}`; }
+function validSSNFormat(){ const s = getSSN().trim(); const normalized = s.replace(/[–—‐‑−]/g,'-'); return /^\d{3}-\d{2}-\d{4}$/.test(normalized); }
+
+// Deterministic digest (for duplicate detection only; demo-only in front-end)
+async function ssnDeterministicDigest(ssnDigits){
+  return await sha256Hex(DETERMINISTIC_PEPPER + '|' + ssnDigits);
+}
 
 function renderEmployees(){
   const q = (els.search.value||'').trim().toLowerCase();
-  els.tableBody.innerHTML = store.employees.filter(e => !q || `${e.firstName} ${e.lastName}`.toLowerCase().includes(q) || (e.ssnMasked||'').includes(q))
-  .map(e => {
+  els.tableBody.innerHTML = store.employees.filter(e => {
+    const name = `${e.firstName} ${e.lastName}`.toLowerCase();
+    const email = (e.email||'').toLowerCase();
+    return !q || name.includes(q) || email.includes(q) || (e.ssnMasked||'').includes(q);
+  }).map(e => {
     const status = e.verification?.status || 'pending';
     const label = { verified:'Verified (match)', mismatch:'Mismatch', deceased:'Deceased', pending:'Pending' }[status] || 'Pending';
     const last = e.verification?.at ? new Date(e.verification.at).toLocaleString() : '—';
@@ -63,6 +82,7 @@ function renderEmployees(){
       <td>${e.firstName} ${e.lastName}</td>
       <td>${e.dob||''}</td>
       <td>${e.employeeId||''}</td>
+      <td>${e.email||''}</td>
       <td>${e.ssnMasked||''}</td>
       <td><span class="status ${status}">${label}</span></td>
       <td>${last}</td>
@@ -70,7 +90,7 @@ function renderEmployees(){
         <button data-action="verify" data-id="${e.id}">Re-Verify</button>
         <button class="secondary" data-action="delete" data-id="${e.id}">Delete</button>
       </td>
-    </tr>`; }).join('') || `<tr><td colspan="7" class="muted">No employees yet.</td></tr>`;
+    </tr>`; }).join('') || `<tr><td colspan="8" class="muted">No employees yet.</td></tr>`;
 }
 
 function renderAudit(){
@@ -98,65 +118,59 @@ function mockVerify(ssn, name, dob){
 
 // SSN segmented input behavior
 function onlyDigits(e){ e.target.value = e.target.value.replace(/\D/g,''); }
-function autoAdvance(e){
-  const t = e.target; const max = parseInt(t.getAttribute('maxlength'),10);
-  if (t.value.length >= max){ if (t.id==='ssn1') els.ssn2.focus(); else if (t.id==='ssn2') els.ssn3.focus(); }
-}
-function autoBackspace(e){
-  const t = e.target; if (e.key === 'Backspace' && t.value.length===0){ if (t.id==='ssn3') els.ssn2.focus(); else if (t.id==='ssn2') els.ssn1.focus(); }
-}
-function handlePaste(e){
-  const data = (e.clipboardData || window.clipboardData).getData('text');
-  const digits = data.replace(/\D/g,'');
-  if (digits.length === 9){ e.preventDefault(); els.ssn1.value = digits.slice(0,3); els.ssn2.value = digits.slice(3,5); els.ssn3.value = digits.slice(5); els.ssn3.focus(); }
-}
-function getSSN(){ return `${els.ssn1.value}-${els.ssn2.value}-${els.ssn3.value}`; }
-function validSSNFormat(){ return /^\d{3}-\d{2}-\d{4}$/.test(getSSN()); }
+function autoAdvance(e){ const t=e.target, max=+t.getAttribute('maxlength'); if (t.value.length>=max){ if (t.id==='ssn1') els.ssn2.focus(); else if (t.id==='ssn2') els.ssn3.focus(); } }
+function autoBackspace(e){ const t=e.target; if (e.key==='Backspace' && t.value.length===0){ if (t.id==='ssn3') els.ssn2.focus(); else if (t.id==='ssn2') els.ssn1.focus(); } }
+function handlePaste(e){ const d=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,''); if (d.length===9){ e.preventDefault(); els.ssn1.value=d.slice(0,3); els.ssn2.value=d.slice(3,5); els.ssn3.value=d.slice(5); els.ssn3.focus(); } }
 
-// Inline verify state for Add Form
-let addVerifyResult = null; // {status,message,at}
+let addVerifyResult = null; // {status,message,at,ssn}
+function setVerifyStatus(kind, msg){ const map={ok:'ok',error:'error',warn:'warn'}; els.verifyStatus.innerHTML=`<span class="${map[kind]}">${msg}</span>`; }
+function resetVerifyState(){ addVerifyResult=null; els.saveBtn.disabled=true; setVerifyStatus('warn','Please verify SSN before saving.'); }
 
-function setVerifyStatus(kind, msg){
-  els.verifyStatus.innerHTML = `<span class="${kind}">${msg}</span>`;
-}
-
-function resetVerifyState(){ addVerifyResult = null; els.saveBtn.disabled = true; setVerifyStatus('warn','Please verify SSN before saving.'); }
-
-// Initialization
+// Init
 load(); renderEmployees(); renderAudit(); resetVerifyState();
 
 // Nav
 els.nav.employees.addEventListener('click', ()=>switchView('employees'));
 els.nav.add.addEventListener('click', ()=>{ switchView('add'); resetVerifyState(); });
 els.nav.audit.addEventListener('click', ()=>{ switchView('audit'); renderAudit(); });
+els.nav.compliance.addEventListener('click', ()=>{ switchView('compliance'); });
 
-// SSN input listeners
+// Email live validation
+['input','blur'].forEach(evt=>{
+  els.email.addEventListener(evt, ()=>{
+    const ok = isValidEmail(els.email.value);
+    els.emailHelp.textContent = ok ? '' : 'Enter a valid email like name@company.com';
+  });
+});
+
+// SSN inputs
 [els.ssn1, els.ssn2, els.ssn3].forEach(inp=>{
   inp.addEventListener('input', (e)=>{ onlyDigits(e); autoAdvance(e); resetVerifyState(); });
   inp.addEventListener('keydown', autoBackspace);
   inp.addEventListener('paste', handlePaste);
 });
 
-// Verify button
+// Verify
 els.verifyBtn.addEventListener('click', ()=>{
-  const name = new FormData(els.addForm);
-  const first = (name.get('firstName')||'').trim();
-  const last = (name.get('lastName')||'').trim();
-  const dob = name.get('dob');
-  const fullName = `${first} ${last}`.trim();
+  const fd = new FormData(els.addForm);
+  const first = (fd.get('firstName')||'').trim();
+  const last = (fd.get('lastName')||'').trim();
+  const dob = (fd.get('dob')||'').trim();
+  const email = normalizeEmail(fd.get('email')||'');
 
   if (!first || !last || !dob){ setVerifyStatus('error','Fill name and DOB before verification.'); return; }
+  if (!email || !isValidEmail(email)){ setVerifyStatus('error','Enter a valid email before verification.'); els.email.focus(); return; }
   if (!els.consentAdd.checked){ setVerifyStatus('error','You must confirm SSA‑89 consent is on file.'); return; }
   if (!validSSNFormat()){ setVerifyStatus('error','SSN must be in xxx‑xx‑xxxx format.'); return; }
 
-  const ssn = getSSN();
-  const res = mockVerify(ssn, fullName, dob);
+  const ssn = getSSN().replace(/[–—‐‑−]/g,'-');
+  const res = mockVerify(ssn, `${first} ${last}`, dob);
   addVerifyResult = { ...res, at: nowISO(), ssn };
 
   if (res.status === 'verified'){
     setVerifyStatus('ok', `Verified ✓ — ${res.message}`);
     els.saveBtn.disabled = false;
-    addAudit('VERIFY', fullName, `${res.status}: ${res.message}`);
+    addAudit('VERIFY', `${first} ${last}`, `${res.status}: ${res.message}`);
     save();
   } else if (res.status === 'deceased'){
     setVerifyStatus('error', 'Verification failed: SSN has a death indicator.');
@@ -167,35 +181,114 @@ els.verifyBtn.addEventListener('click', ()=>{
   }
 });
 
-// Add form submit (allowed only after verified)
+function buildMergeRows(existing, incoming){
+  const fields=[
+    {key:'firstName',label:'First Name'},
+    {key:'lastName',label:'Last Name'},
+    {key:'dob',label:'Date of Birth'},
+    {key:'employeeId',label:'Employee ID'},
+    {key:'department',label:'Department'},
+    {key:'email',label:'Email'},
+  ];
+  els.mergeBody.innerHTML = fields.map(f=>{
+    const ex = existing[f.key] ?? '';
+    const nv = incoming[f.key] ?? '';
+    const id = `use-${f.key}`;
+    return `<tr>
+      <td>${f.label}</td>
+      <td class="value">${ex || '<span class="muted">—</span>'}</td>
+      <td class="value">${nv || '<span class="muted">—</span>'}</td>
+      <td class="choice">
+        <label><input type="radio" name="${id}" value="existing" checked /> Existing</label>
+        <label><input type="radio" name="${id}" value="new" /> New</label>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openMerge(existing, incoming, onConfirm){
+  buildMergeRows(existing, incoming);
+  els.mergeConfirmBtn.onclick = () => {
+    const fields = ['firstName','lastName','dob','employeeId','department','email'];
+    const updated = { ...existing };
+    fields.forEach(k=>{
+      const choice = document.querySelector(`input[name="use-${k}"]:checked`)?.value || 'existing';
+      if (choice==='new') updated[k] = incoming[k] ?? existing[k];
+    });
+    if (incoming.verification?.status === 'verified') {
+      updated.verification = incoming.verification;
+    }
+    onConfirm(updated);
+    els.mergeModal.close();
+  };
+  els.mergeModal.showModal();
+}
+
 els.addForm.addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const fd = new FormData(els.addForm);
-  const firstName = (fd.get('firstName')||'').trim();
-  const lastName = (fd.get('lastName')||'').trim();
-  const dob = fd.get('dob');
-  const employeeId = (fd.get('employeeId')||'').trim();
-  const department = (fd.get('department')||'').trim();
-
   if (!addVerifyResult || addVerifyResult.status !== 'verified'){
     setVerifyStatus('error','Please verify SSN successfully before saving.');
     return;
   }
 
+  const fd = new FormData(els.addForm);
+  const firstName  = (fd.get('firstName')  || '').trim();
+  const lastName   = (fd.get('lastName')   || '').trim();
+  const dob        = (fd.get('dob')        || '').trim();
+  const employeeId = (fd.get('employeeId') || '').trim();
+  const department = (fd.get('department') || '').trim();
+  const emailNorm  = normalizeEmail(fd.get('email')||'');
+
+  if (!emailNorm || !isValidEmail(emailNorm)){
+    els.email.focus();
+    els.emailHelp.textContent = 'Enter a valid email like name@company.com';
+    return;
+  }
+
   const ssnDigits = addVerifyResult.ssn.replace(/\D/g,'');
   const salt = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
-  const ssnHash = await sha256Hex(ssnDigits + ':' + salt);
-  const emp = {
+  const ssnHash = await sha256Hex(ssnDigits + ':' + salt); // per-record salt hash
+  const ssnDet = await ssnDeterministicDigest(ssnDigits);   // deterministic digest (demo)
+
+  const incoming = {
     id: crypto.randomUUID(), firstName, lastName, dob, employeeId, department,
-    ssnMasked: maskSSN(ssnDigits), ssnHash, salt,
-    verification: { status:'verified', message:addVerifyResult.message, at: addVerifyResult.at, by: CURRENT_USER }
+    email: emailNorm,
+    ssnMasked: maskSSN(ssnDigits),
+    ssnHash, salt, ssnDet, // store both
+    verification: { status:'verified', message:addVerifyResult.message, at:addVerifyResult.at, by: CURRENT_USER }
   };
 
-  store.employees.unshift(emp);
+  // Duplicate detection: deterministic SSN OR email
+  const dup = store.employees.find(emp => emp.ssnDet === ssnDet || normalizeEmail(emp.email) === emailNorm);
+
+  if (dup){
+    openMerge(dup, incoming, (merged)=>{
+      // keep identity fields (id, ssnHash, salt, ssnDet, ssnMasked) from existing
+      merged.id = dup.id;
+      merged.ssnHash = dup.ssnHash;
+      merged.salt = dup.salt;
+      merged.ssnDet = dup.ssnDet;
+      merged.ssnMasked = dup.ssnMasked;
+
+      const idx = store.employees.findIndex(e=>e.id===dup.id);
+      if (idx>=0) store.employees[idx] = merged;
+      addAudit('MERGE', `${merged.firstName} ${merged.lastName}`, 'merged duplicate into existing');
+      save();
+
+      els.addForm.reset();
+      [els.ssn1, els.ssn2, els.ssn3].forEach(i=>i.value='');
+      resetVerifyState();
+      renderEmployees();
+      switchView('employees');
+    });
+    return;
+  }
+
+  // No duplicate → create new
+  store.employees.unshift(incoming);
   addAudit('CREATE', `${firstName} ${lastName}`, 'created with pre‑verification');
   save();
 
-  // Reset form for next entry
   els.addForm.reset();
   [els.ssn1, els.ssn2, els.ssn3].forEach(i=>i.value='');
   resetVerifyState();
@@ -203,7 +296,7 @@ els.addForm.addEventListener('submit', async (e)=>{
   switchView('employees');
 });
 
-// Employees table actions
+// Table actions
 els.tableBody.addEventListener('click', (e)=>{
   const btn = e.target.closest('button'); if (!btn) return;
   const id = btn.dataset.id; const action = btn.dataset.action;
@@ -217,26 +310,9 @@ els.tableBody.addEventListener('click', (e)=>{
     }
   }
   if (action==='verify'){
-    openVerify(emp);
+    alert('Re-verify would call SSA in production. (Demo)');
   }
 });
-
-function openVerify(emp){
-  els.verifyEmp.textContent = `${emp.firstName} ${emp.lastName} — ${emp.ssnMasked}`;
-  els.consentCheckbox.checked = false;
-  els.runVerifyBtn.onclick = ()=>runVerify(emp);
-  els.verifyModal.showModal();
-}
-
-function runVerify(emp){
-  if (!els.consentCheckbox.checked){ alert('You must confirm written consent (SSA‑89) is on file.'); return; }
-  // We cannot reconstruct full SSN from masked/hash in demo; keep mock result neutral
-  // In real app, store encrypted SSN or call with user input again.
-  const res = { status:'verified', message:'Re-verify (demo)' };
-  emp.verification = { status: res.status, message: res.message, at: nowISO(), by: CURRENT_USER };
-  addAudit('VERIFY', `${emp.firstName} ${emp.lastName}`, `${res.status}: ${res.message}`);
-  save(); renderEmployees(); els.verifyModal.close();
-}
 
 // Search
 els.search.addEventListener('input', renderEmployees);
@@ -245,7 +321,7 @@ els.search.addEventListener('input', renderEmployees);
 els.exportBtn.addEventListener('click', ()=>{
   const blob = new Blob([JSON.stringify(store, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = 'ssn-demo-inline-data.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  a.href = url; a.download = 'ssn-demo-inline-brand-v3-data.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
 });
 
 els.importFile.addEventListener('change', (e)=>{
