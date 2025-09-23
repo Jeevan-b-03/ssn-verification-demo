@@ -1,0 +1,7 @@
+
+# Ignore local dev files
+*.log
+*.tmp
+node_modules/
+.env
+.DS_Store
