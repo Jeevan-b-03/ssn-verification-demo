@@ -2,177 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Employee Records • Inline SSN Verification</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>SSN Authorization Demo</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="/favicon.svg" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <img src="logo.svg" alt="Brand logo" class="logo"/>
-      <div class="titles">
-        <strong>Employee Records</strong>
-        <span class="subtitle">Inline SSN Verification Demo</span>
-      </div>
-    </div>
-    <nav class="nav">
-      <button id="nav-employees" class="nav-btn active" type="button">Employees</button>
-      <button id="nav-add" class="nav-btn" type="button">Add Employee</button>
-      <button id="nav-audit" class="nav-btn" type="button">Audit Log</button>
-      <button id="nav-compliance" class="nav-btn" type="button">Compliance</button>
-    </nav>
-  </header>
+  <nav>
+    <button id="nav-employees">Employees</button>
+    <button id="nav-add">Add Employee</button>
+    <button id="nav-audit">Audit Log</button>
+    <button id="nav-compliance">Compliance</button>
+  </nav>
 
   <main>
-    <section id="view-employees" class="view">
-      <div class="toolbar">
-        <input id="search" placeholder="Search by name, email, EMP ID or last 4 of SSN…" />
-        <div class="spacer"></div>
-        <button id="exportBtn" class="secondary">Export JSON</button>
-        <label class="file-label">Import JSON <input type="file" id="importFile" accept="application/json" /></label>
-      </div>
-      <div class="card">
-        <table id="employeeTable">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>DOB</th>
-              <th>Employee ID</th>
-              <th>Email</th>
-              <th>SSN (masked)</th>
-              <th>Status</th>
-              <th>Verified At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+    <section id="view-add">
+      <form id="addForm">
+        <label>First Name: <input name="firstName" required /></label>
+        <label>Last Name: <input name="lastName" required /></label>
+        <label>Date of Birth: <input name="dob" type="date" required /></label>
+        <div id="dobWarning" class="muted"></div>
+        <label>Employee ID: <input name="employeeId" required /></label>
+        <label>Department: <input name="department" /></label>
+        <label>Personal Email: <input id="email" name="email" required /></label>
+        <div id="emailHelp" class="muted"></div>
+        <label>District Email: <input id="emailDistrict" name="emailDistrict" required /></label>
+        <div id="emailDistrictHelp" class="muted"></div>
+        <label>SSN: 
+          <input id="ssn1" maxlength="3" size="3" required /> -
+          <input id="ssn2" maxlength="2" size="2" required /> -
+          <input id="ssn3" maxlength="4" size="4" required />
+        </label>
+        <label><input type="checkbox" id="consentAdd" /> SSA-89 Consent on File</label>
+        <div id="verifyStatus" class="muted"></div>
+        <button type="button" id="verifyBtn">Verify SSN</button>
+        <button type="submit" id="saveBtn" disabled>Save</button>
+      </form>
     </section>
 
-    <section id="view-add" class="view hidden">
-      <div class="card">
-        <h2>Add Employee (Verify SSN before Save)</h2>
-        <form id="addForm" autocomplete="off">
-          <div class="grid">
-            <label>First Name<input name="firstName" required /></label>
-            <label>Last Name<input name="lastName" required /></label>
-            <label>Date of Birth<input name="dob" type="date" required /></label>
-            <label>Employee ID<input name="employeeId" placeholder="EMP-001" /></label>
-            <label>Department<input name="department" placeholder="IT" /></label>
-            <label>Email Address<input name="email" id="email" type="email" placeholder="name@company.com" required /></label>
-          </div>
-
-          <small id="emailHelp" class="tiny muted" aria-live="polite"></small>
-
-          <fieldset class="ssn-fieldset">
-            <legend>Social Security Number <span class="muted">(format: xxx‑xx‑xxxx)</span></legend>
-            <div class="ssn-group" aria-label="Social Security Number">
-              <input id="ssn1" class="ssn" inputmode="numeric" maxlength="3" aria-label="First 3 digits" required />
-              <span class="dash">-</span>
-              <input id="ssn2" class="ssn" inputmode="numeric" maxlength="2" aria-label="Next 2 digits" required />
-              <span class="dash">-</span>
-              <input id="ssn3" class="ssn" inputmode="numeric" maxlength="4" aria-label="Last 4 digits" required />
-            </div>
-            <p class="tiny muted">Only digits allowed. Auto‑advance between boxes. Paste full SSN to auto‑split.</p>
-          </fieldset>
-
-          <div class="consent-box">
-            <input type="checkbox" id="consentAdd" />
-            <label for="consentAdd">I confirm SSA‑89 written consent is on file for this verification request.</label>
-          </div>
-
-          <div class="verify-status" id="verifyStatus" role="status" aria-live="polite"></div>
-
-          <div class="actions">
-            <button type="button" id="verifyBtn" class="primary">Verify SSN</button>
-            <button type="submit" id="saveBtn" class="secondary" disabled>Save Employee</button>
-            <button type="reset" class="secondary">Reset</button>
-          </div>
-        </form>
-        <p class="tiny muted">Demo uses a mock verifier. In production, integrate SSA services per policy. Do not use real SSNs.</p>
-      </div>
+    <section id="view-employees" class="hidden">
+      <input id="search" placeholder="Search employees..." />
+      <table id="employeeTable">
+        <thead>
+          <tr>
+            <th>Name</th><th>DOB</th><th>Emp ID</th><th>Email</th><th>SSN</th><th>Status</th><th>Verified At</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
 
-    <section id="view-audit" class="view hidden">
-      <div class="card">
-        <h2>Audit Log</h2>
-        <table id="auditTable">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>User</th>
-              <th>Action</th>
-              <th>Employee</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+    <section id="view-audit" class="hidden">
+      <table id="auditTable">
+        <thead>
+          <tr><th>Timestamp</th><th>User</th><th>Action</th><th>Employee</th><th>Result</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
 
-    <section id="view-compliance" class="view hidden">
-      <div class="card">
-        <h2>Compliance & Usage</h2>
-        <p class="muted">Follow SSA policies when integrating real services. This demo includes a mock verifier. Replace with SSA services only if eligible and with written consent (SSA‑89).</p>
-        <h3>SSNVS (Social Security Number Verification Service)</h3>
-        <ul>
-          <li>For <strong>wage reporting (Form W‑2) purposes only</strong>.</li>
-          <li>Verify up to 10 names/SSNs online or upload up to 250k for next‑business‑day results.</li>
-        </ul>
-        <p>Official page: <a href="https://www.ssa.gov/employer/ssnv.htm" target="_blank" rel="noopener">ssa.gov/employer/ssnv.htm</a></p>
-        <h3>eCBSV (electronic Consent Based SSN Verification)</h3>
-        <ul>
-          <li><strong>API</strong> returns yes/no match and death indicator (if present).</li>
-          <li>Requires the SSN holder’s <strong>written consent (SSA‑89)</strong>.</li>
-          <li>Limited to <strong>Permitted Entities</strong>.</li>
-        </ul>
-        <p>Overview: <a href="https://www.ssa.gov/dataexchange/eCBSV/" target="_blank" rel="noopener">ssa.gov/dataexchange/eCBSV/</a></p>
-        <h3>SSA‑89 (Written Consent)</h3>
-        <ul>
-          <li>One‑time use; typically valid for 90 days unless initialed otherwise.</li>
-          <li>Must include name, DOB, SSN, purpose, and signature (wet or electronic meeting requirements).</li>
-        </ul>
-        <p>Form: <a href="https://www.ssa.gov/forms/ssa-89.pdf" target="_blank" rel="noopener">ssa.gov/forms/ssa-89.pdf</a> · Consent guidance: <a href="https://www.ssa.gov/dataexchange/eCBSV/written_consent.html" target="_blank" rel="noopener">eCBSV Written Consent</a></p>
-        <div class="callout">
-          <strong>Reminder:</strong> Never store plaintext SSNs; keep masked + hashed data and immutable audit logs.
-        </div>
-      </div>
+    <section id="view-compliance" class="hidden">
+      <p>Compliance information goes here.</p>
     </section>
 
-    <!-- Merge Dialog -->
     <dialog id="mergeModal">
-      <form method="dialog" class="modal">
-        <h3>Employee Already Exists</h3>
-        <p id="mergeTitle" class="muted tiny">A record with the same SSN (deterministic), email, or EMP ID exists. Choose fields to update on the existing record.</p>
-        <div class="card" style="max-height:50vh;overflow:auto">
-          <table class="merge-table">
-            <thead>
-              <tr>
-                <th>Field</th>
-                <th>Existing</th>
-                <th>New</th>
-                <th>Use</th>
-              </tr>
-            </thead>
-            <tbody id="mergeBody"></tbody>
-          </table>
-        </div>
-        <menu>
-          <button value="cancel" class="secondary">Cancel</button>
-          <button id="mergeConfirmBtn" value="default" class="primary">Merge & Update</button>
-        </menu>
+      <form method="dialog">
+        <table><tbody id="mergeBody"></tbody></table>
+        <button id="mergeConfirmBtn">Confirm Merge</button>
       </form>
     </dialog>
+  </main>
 
-    <footer>
-      <p class="tiny">Brand placeholders active · Demo only · © 2025</p>
-    </footer>
+  <footer>
+    <button id="exportBtn">Export</button>
+    <input type="file" id="importFile" />
+  </footer>
 
   <script src="app.js"></script>
 </body>
