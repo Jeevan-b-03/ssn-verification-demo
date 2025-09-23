@@ -1,79 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>SSN Authorization Demo</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employee Records • Inline SSN Verification</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <nav>
-    <button id="nav-employees">Employees</button>
-    <button id="nav-add">Add Employee</button>
-    <button id="nav-audit">Audit Log</button>
-    <button id="nav-compliance">Compliance</button>
-  </nav>
+  <header class="topbar">
+    <div class="brand">
+      <img class="logo" alt="Brand logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%230167c1'/%3E%3Cpath d='M7 12h10M12 7v10' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+      <div class="titles">
+        <strong>Employee Records</strong>
+        <span class="subtitle">Inline SSN Verification Demo</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <button id="nav-employees" class="nav-btn active">Employees</button>
+      <button id="nav-add" class="nav-btn">Add Employee</button>
+      <button id="nav-audit" class="nav-btn">Audit Log</button>
+      <button id="nav-compliance" class="nav-btn">Compliance</button>
+    </nav>
+  </header>
 
   <main>
-    <section id="view-add">
-      <form id="addForm">
-        <label>First Name: <input name="firstName" required /></label>
-        <label>Last Name: <input name="lastName" required /></label>
-        <label>Date of Birth: <input name="dob" type="date" required /></label>
-        <div id="dobWarning" class="muted"></div>
-        <label>Employee ID: <input name="employeeId" required /></label>
-        <label>Department: <input name="department" /></label>
-        <label>Personal Email: <input id="email" name="email" required /></label>
-        <div id="emailHelp" class="muted"></div>
-        <label>District Email: <input id="emailDistrict" name="emailDistrict" required /></label>
-        <div id="emailDistrictHelp" class="muted"></div>
-        <label>SSN: 
-          <input id="ssn1" maxlength="3" size="3" required /> -
-          <input id="ssn2" maxlength="2" size="2" required /> -
-          <input id="ssn3" maxlength="4" size="4" required />
+    <!-- Employees View -->
+    <section id="view-employees" class="card">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search name, email, EMP ID, or last4" />
+        <span class="spacer"></span>
+        <label class="file-label">
+          <input id="importFile" type="file" accept="application/json" />
+          Import JSON
         </label>
-        <label><input type="checkbox" id="consentAdd" /> SSA-89 Consent on File</label>
-        <div id="verifyStatus" class="muted"></div>
-        <button type="button" id="verifyBtn">Verify SSN</button>
-        <button type="submit" id="saveBtn" disabled>Save</button>
+        <button id="exportBtn" class="secondary">Export JSON</button>
+      </div>
+      <div class="table-wrap">
+        <table id="employeeTable">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">DOB</th>
+              <th scope="col">Employee ID</th>
+              <th scope="col">Email(s)</th>
+              <th scope="col">SSN (masked)</th>
+              <th scope="col">Status</th>
+              <th scope="col">Verified At</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Add Employee View -->
+    <section id="view-add" class="card hidden">
+      <h3>Add Employee (Verify SSN before Save)</h3>
+      <form id="addForm">
+        <div class="grid">
+          <label>
+            <span>First Name</span>
+            <input id="firstName" name="firstName" autocomplete="given-name" />
+          </label>
+          <label>
+            <span>Last Name</span>
+            <input id="lastName" name="lastName" autocomplete="family-name" />
+          </label>
+          <label>
+            <span>Date of Birth</span>
+            <input id="dob" name="dob" type="date" autocomplete="bday" />
+          </label>
+          <label>
+            <span>Employee ID</span>
+            <input id="employeeId" name="employeeId" />
+          </label>
+          <label>
+            <span>Department</span>
+            <input id="department" name="department" />
+          </label>
+          <div></div>
+        </div>
+
+        <div class="grid">
+          <label>
+            <span>Personal Email</span>
+            <input id="emailPersonal" name="emailPersonal" type="email" autocomplete="email" />
+            <div id="emailPersonalHelp" class="tiny muted"></div>
+          </label>
+          <label>
+            <span>District Email</span>
+            <input id="emailDistrict" name="emailDistrict" type="email" autocomplete="off" />
+            <div id="emailDistrictHelp" class="tiny muted"></div>
+          </label>
+        </div>
+
+        <fieldset class="ssn-fieldset">
+          <legend>Social Security Number (format: xxx‑xx‑xxxx)</legend>
+          <div class="ssn-group" aria-describedby="ssnHint">
+            <input id="ssn1" class="ssn" inputmode="numeric" pattern="\d*" maxlength="3" autocomplete="off" aria-label="SSN first three digits" />
+            <span class="dash" aria-hidden="true">—</span>
+            <input id="ssn2" class="ssn" inputmode="numeric" pattern="\d*" maxlength="2" autocomplete="off" aria-label="SSN next two digits" />
+            <span class="dash" aria-hidden="true">—</span>
+            <input id="ssn3" class="ssn" inputmode="numeric" pattern="\d*" maxlength="4" autocomplete="off" aria-label="SSN last four digits" />
+          </div>
+          <p id="ssnHint" class="tiny muted">Only digits allowed. Auto‑advance between boxes. Paste full SSN to auto‑split.</p>
+          <div id="verifyStatus" class="verify-status" role="status" aria-live="polite"></div>
+        </fieldset>
+
+        <div class="consent-box">
+          <label>
+            <input id="consentAdd" type="checkbox" />
+            I confirm SSA‑89 written consent is on file for this verification request.
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="verifyBtn" type="button" class="secondary">Verify SSN</button>
+          <button id="saveBtn" type="submit" class="primary" disabled>Save Employee</button>
+          <button type="reset" class="secondary" onclick="return false;" id="resetBtn">Reset</button>
+        </div>
+        <p class="tiny muted">Demo uses a mock verifier. In production, integrate SSA services per policy. Do not use real SSNs.</p>
       </form>
     </section>
 
-    <section id="view-employees" class="hidden">
-      <input id="search" placeholder="Search employees..." />
-      <table id="employeeTable">
-        <thead>
-          <tr>
-            <th>Name</th><th>DOB</th><th>Emp ID</th><th>Email</th><th>SSN</th><th>Status</th><th>Verified At</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <!-- Audit Log View -->
+    <section id="view-audit" class="card hidden">
+      <h3>Audit Log</h3>
+      <div class="table-wrap">
+        <table id="auditTable">
+          <thead>
+            <tr>
+              <th scope="col">Timestamp</th>
+              <th scope="col">User</th>
+              <th scope="col">Action</th>
+              <th scope="col">Employee</th>
+              <th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
-    <section id="view-audit" class="hidden">
-      <table id="auditTable">
-        <thead>
-          <tr><th>Timestamp</th><th>User</th><th>Action</th><th>Employee</th><th>Result</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <!-- Compliance View -->
+    <section id="view-compliance" class="card hidden">
+      <h3>Compliance & Usage</h3>
+      <div class="callout">
+        <p>Follow SSA policies when integrating real services. This demo includes a mock verifier. Replace with SSA services only if eligible and with written consent (SSA‑89).</p>
+        <ul class="tiny">
+          <li><strong>SSNVS</strong>: For wage reporting (Form W‑2) purposes only.</li>
+          <li><strong>eCBSV</strong>: API returns yes/no match and death indicator (if present). Requires SSA‑89 consent.</li>
+          <li>Never store plaintext SSNs; keep masked + hashed data and immutable audit logs.</li>
+        </ul>
+      </div>
     </section>
-
-    <section id="view-compliance" class="hidden">
-      <p>Compliance information goes here.</p>
-    </section>
-
-    <dialog id="mergeModal">
-      <form method="dialog">
-        <table><tbody id="mergeBody"></tbody></table>
-        <button id="mergeConfirmBtn">Confirm Merge</button>
-      </form>
-    </dialog>
   </main>
 
+  <!-- Merge dialog -->
+  <dialog id="mergeModal" class="modal">
+    <h3>Employee Already Exists</h3>
+    <div class="tiny muted">A record with the same SSN (deterministic), email, or EMP ID exists. Choose fields to update on the existing record.</div>
+    <div class="table-wrap" style="max-height:50vh;overflow:auto">
+      <table class="merge-table">
+        <thead>
+          <tr>
+            <th>Field</th><th>Existing</th><th>New</th><th>Use</th>
+          </tr>
+        </thead>
+        <tbody id="mergeBody"></tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button class="secondary" onclick="document.getElementById('mergeModal').close()">Cancel</button>
+      <button id="mergeConfirmBtn" class="primary">Merge & Update</button>
+    </div>
+  </dialog>
+
+  <!-- Preview dialog -->
+  <dialog id="previewModal" class="modal">
+    <h3>Review Employee</h3>
+    <div id="previewBody" class="tiny"></div>
+    <div class="actions">
+      <button id="previewCancelBtn" class="secondary" type="button">Back</button>
+      <button id="previewConfirmBtn" class="primary" type="button">Confirm & Save</button>
+    </div>
+  </dialog>
+
   <footer>
-    <button id="exportBtn">Export</button>
-    <input type="file" id="importFile" />
+    <span>Brand placeholders active · Demo only · © 2025</span>
   </footer>
 
   <script src="app.js"></script>

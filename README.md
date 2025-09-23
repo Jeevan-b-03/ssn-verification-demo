@@ -1,11 +1,12 @@
-# Inline SSN Verification — Branded Demo (v4)
+# Inline SSN Verification — Branded Demo (v4.1)
 
 **Demo only — do not use real SSNs.**
 
-### What’s new in v4
-- **Duplicate detection** now includes **EMP ID** (case-insensitive, non-alphanumeric ignored), in addition to **email** and **deterministic SSN digest**.
-- Search bar updated to match by **EMP ID** too.
-- Merge flow recomputes the normalized EMP ID after updates.
+### What’s new in v4.1
+- Two email inputs: Personal and District
+- DOB logic check: must be 18 or older
+- Fuzzy duplicate detection using Jaro-Winkler similarity
+- Preview-before-save flow: Verify → Submit → Check duplicates → Merge → Review → Save
 
 ### Deploy
 - Push these files to your GitHub repo (App Location `/`) and let **Azure Static Web Apps** auto-deploy.
