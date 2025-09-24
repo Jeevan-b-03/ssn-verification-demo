@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Employee Records • Inline SSN Verification</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Records (Demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="favicon.svg" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <img class="logo" alt="Brand logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%230167c1'/%3E%3Cpath d='M7 12h10M12 7v10' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+      <img src="logo.svg" alt="Brand logo" class="logo"/>
       <div class="titles">
         <strong>Employee Records</strong>
-        <span class="subtitle">Inline SSN Verification Demo</span>
+        <span class="subtitle">Duplicate Account Alignment Demo</span>
       </div>
     </div>
-    <nav class="nav">
-      <button id="nav-employees" class="nav-btn active">Employees</button>
-      <button id="nav-add" class="nav-btn">Add Employee</button>
-      <button id="nav-audit" class="nav-btn">Audit Log</button>
-      <button id="nav-compliance" class="nav-btn">Compliance</button>
+    <nav class="nav" id="main-nav">
+      <button id="nav-employees" type="button" class="nav-btn active" data-view="employees">Employees</button>
+      <button id="nav-add" type="button" class="nav-btn" data-view="add">Add Employee</button>
+      <button id="nav-audit" type="button" class="nav-btn" data-view="audit">Audit Log</button>
+      <button id="nav-compliance" type="button" class="nav-btn" data-view="compliance">Compliance</button>
     </nav>
   </header>
 
@@ -27,13 +31,13 @@
     <!-- Employees View -->
     <section id="view-employees" class="card">
       <div class="toolbar">
-        <input id="search" type="search" placeholder="Search name, email, EMP ID, or last4" />
+        <input id="search" type="search" placeholder="e.g., Jane, EMP007, jane@company.com, 1234" />
         <span class="spacer"></span>
         <label class="file-label">
           <input id="importFile" type="file" accept="application/json" />
           Import JSON
         </label>
-        <button id="exportBtn" class="secondary">Export JSON</button>
+        <button id="exportBtn" class="secondary" type="button">Export JSON</button>
       </div>
       <div class="table-wrap">
         <table id="employeeTable">
@@ -56,16 +60,17 @@
 
     <!-- Add Employee View -->
     <section id="view-add" class="card hidden">
-      <h3>Add Employee (Verify SSN before Save)</h3>
-      <form id="addForm">
+      <h3>Add Employee</h3>
+      <h5>Verify SSN and Check for Duplicate Accounts</h5>
+      <form id="addForm" novalidate>
         <div class="grid">
           <label>
             <span>First Name</span>
-            <input id="firstName" name="firstName" autocomplete="given-name" />
+            <input id="firstName" name="firstName" autocomplete="given-name" placeholder="Jane" />
           </label>
           <label>
             <span>Last Name</span>
-            <input id="lastName" name="lastName" autocomplete="family-name" />
+            <input id="lastName" name="lastName" autocomplete="family-name" placeholder="Moe" />
           </label>
           <label>
             <span>Date of Birth</span>
@@ -73,52 +78,74 @@
           </label>
           <label>
             <span>Employee ID</span>
-            <input id="employeeId" name="employeeId" />
+            <input id="employeeId" name="employeeId" placeholder="EMP007" />
           </label>
           <label>
             <span>Department</span>
-            <input id="department" name="department" />
+            <input id="department" name="department" placeholder="IT" />
           </label>
-          <div></div>
+          <label>
+            <span>Phone Number</span>
+            <input id="phone" name="phone" inputmode="tel" placeholder="555 555 5555" />
+            <div id="phoneHelp" class="tiny muted"></div>
+          </label>
         </div>
 
         <div class="grid">
           <label>
             <span>Personal Email</span>
-            <input id="emailPersonal" name="emailPersonal" type="email" autocomplete="email" />
+            <input id="emailPersonal" name="emailPersonal" type="email" autocomplete="email" placeholder="jane.moe@example.com" />
             <div id="emailPersonalHelp" class="tiny muted"></div>
           </label>
           <label>
             <span>District Email</span>
-            <input id="emailDistrict" name="emailDistrict" type="email" autocomplete="off" />
+            <input id="emailDistrict" name="emailDistrict" type="email" autocomplete="off" placeholder="jane.moe@district.edu" />
             <div id="emailDistrictHelp" class="tiny muted"></div>
           </label>
         </div>
 
+        <div class="grid">
+          <label>
+            <span>Primary Location</span>
+            <select id="location" name="location">
+              <option value="" disabled selected>Select location…</option>
+              <option>HQ</option>
+              <option>NYC</option>
+              <option>LA</option>
+              <option>TX</option>
+              <option>QN</option>
+              <option>Remote</option>
+            </select>
+            <div id="locationHelp" class="tiny muted">Choose the employee’s primary location.</div>
+          </label>
+          <div></div>
+        </div>
+
         <fieldset class="ssn-fieldset">
-          <legend>Social Security Number (format: xxx‑xx‑xxxx)</legend>
+          <legend>SSN (format: xxx‑xx‑xxxx)</legend>
           <div class="ssn-group" aria-describedby="ssnHint">
-            <input id="ssn1" class="ssn" inputmode="numeric" pattern="\d*" maxlength="3" autocomplete="off" aria-label="SSN first three digits" />
+            <input id="ssn1" class="ssn" inputmode="numeric" pattern="\d*" maxlength="3" autocomplete="off" aria-label="SSN first three digits" placeholder="123" />
             <span class="dash" aria-hidden="true">—</span>
-            <input id="ssn2" class="ssn" inputmode="numeric" pattern="\d*" maxlength="2" autocomplete="off" aria-label="SSN next two digits" />
+            <input id="ssn2" class="ssn" inputmode="numeric" pattern="\d*" maxlength="2" autocomplete="off" aria-label="SSN next two digits" placeholder="45" />
             <span class="dash" aria-hidden="true">—</span>
-            <input id="ssn3" class="ssn" inputmode="numeric" pattern="\d*" maxlength="4" autocomplete="off" aria-label="SSN last four digits" />
+            <input id="ssn3" class="ssn" inputmode="numeric" pattern="\d*" maxlength="4" autocomplete="off" aria-label="SSN last four digits" placeholder="6789" />
           </div>
-          <p id="ssnHint" class="tiny muted">Only digits allowed. Auto‑advance between boxes. Paste full SSN to auto‑split.</p>
+          
+          <div class="consent-box">
+            <input type="checkbox" id="consentAdd" />
+            <label for="consentAdd">I confirm SSA‑89 written consent is on file for this verification request.</label>
+          </div>
+
+          <div class="actions">
+            <button id="verifyBtn" type="button" class="secondary">Verify SSN</button>
+          </div>
+
           <div id="verifyStatus" class="verify-status" role="status" aria-live="polite"></div>
         </fieldset>
 
-        <div class="consent-box">
-          <label>
-            <input id="consentAdd" type="checkbox" />
-            I confirm SSA‑89 written consent is on file for this verification request.
-          </label>
-        </div>
-
         <div class="actions">
-          <button id="verifyBtn" type="button" class="secondary">Verify SSN</button>
           <button id="saveBtn" type="submit" class="primary" disabled>Save Employee</button>
-          <button type="reset" class="secondary" onclick="return false;" id="resetBtn">Reset</button>
+          <button type="reset" class="secondary" id="resetBtn">Reset</button>
         </div>
         <p class="tiny muted">Demo uses a mock verifier. In production, integrate SSA services per policy. Do not use real SSNs.</p>
       </form>
@@ -157,10 +184,30 @@
     </section>
   </main>
 
+  <!-- Candidates dialog -->
+  <dialog id="candidatesModal" class="modal">
+    <h3>Possible Duplicate Accounts</h3>
+    <div class="tiny muted">Click a candidate to review and merge. Or skip to save as a new record.</div>
+    <div class="table-wrap" style="max-height:50vh;overflow:auto">
+      <table class="cand-table">
+        <thead>
+          <tr>
+            <th>Score</th><th>Name</th><th>DOB</th><th>EMP ID</th><th>Emails</th><th>Reason</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="candidatesBody"></tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button id="candSkipBtn" class="primary" type="button">Skip & Save New</button>
+      <button id="candCloseBtn" class="secondary" type="button">Cancel</button>
+    </div>
+  </dialog>
+
   <!-- Merge dialog -->
   <dialog id="mergeModal" class="modal">
-    <h3>Employee Already Exists</h3>
-    <div class="tiny muted">A record with the same SSN (deterministic), email, or EMP ID exists. Choose fields to update on the existing record.</div>
+    <h3>Review & Merge</h3>
+    <div class="tiny muted">Compare fields and choose which values to keep.</div>
     <div class="table-wrap" style="max-height:50vh;overflow:auto">
       <table class="merge-table">
         <thead>
@@ -172,8 +219,8 @@
       </table>
     </div>
     <div class="actions">
-      <button class="secondary" onclick="document.getElementById('mergeModal').close()">Cancel</button>
-      <button id="mergeConfirmBtn" class="primary">Merge & Update</button>
+      <button id="mergeBackBtn" class="secondary" type="button">Back to Candidates</button>
+      <button id="mergeConfirmBtn" class="primary" type="button">Merge & Continue</button>
     </div>
   </dialog>
 
@@ -191,6 +238,6 @@
     <span>Brand placeholders active · Demo only · © 2025</span>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="app.js" defer></script>
 </body>
 </html>
