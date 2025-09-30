@@ -31,7 +31,7 @@
     <!-- Employees View -->
     <section id="view-employees" class="card">
       <div class="toolbar">
-        <input id="search" type="search" placeholder="e.g., Jane, EMP007, jane@company.com, 1234" />
+        <input id="search" type="search" placeholder="🔍 Jane, EMP002, jane@company.com" />
         <span class="spacer"></span>
         <label class="file-label">
           <input id="importFile" type="file" accept="application/json" />
@@ -43,14 +43,14 @@
         <table id="employeeTable">
           <thead>
             <tr>
-              <th scope="col">Name</th>
-              <th scope="col">DOB</th>
-              <th scope="col">Employee ID</th>
-              <th scope="col">Email(s)</th>
-              <th scope="col">SSN (masked)</th>
-              <th scope="col">Status</th>
-              <th scope="col">Verified At</th>
-              <th scope="col">Actions</th>
+              <th>Name</th>
+              <th>DOB</th>
+              <th>Employee ID</th>
+              <th>Email(s)</th>
+              <th>SSN (masked)</th>
+              <th>Status</th>
+              <th>Verified At</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -70,7 +70,7 @@
           </label>
           <label>
             <span>Last Name</span>
-            <input id="lastName" name="lastName" autocomplete="family-name" placeholder="Moe" />
+            <input id="lastName" name="lastName" autocomplete="family-name" placeholder="Doe" />
           </label>
           <label>
             <span>Date of Birth</span>
@@ -94,12 +94,12 @@
         <div class="grid">
           <label>
             <span>Personal Email</span>
-            <input id="emailPersonal" name="emailPersonal" type="email" autocomplete="email" placeholder="jane.moe@example.com" />
+            <input id="emailPersonal" name="emailPersonal" type="email" autocomplete="email" placeholder="jane.doe@example.com" />
             <div id="emailPersonalHelp" class="tiny muted"></div>
           </label>
           <label>
             <span>District Email</span>
-            <input id="emailDistrict" name="emailDistrict" type="email" autocomplete="off" placeholder="jane.moe@district.edu" />
+            <input id="emailDistrict" name="emailDistrict" type="email" autocomplete="off" placeholder="jane.doe@district.edu" />
             <div id="emailDistrictHelp" class="tiny muted"></div>
           </label>
         </div>
@@ -158,11 +158,11 @@
         <table id="auditTable">
           <thead>
             <tr>
-              <th scope="col">Timestamp</th>
-              <th scope="col">User</th>
-              <th scope="col">Action</th>
-              <th scope="col">Employee</th>
-              <th scope="col">Result</th>
+              <th>Timestamp</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Employee</th>
+              <th>Result</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -187,7 +187,7 @@
   <!-- Candidates dialog -->
   <dialog id="candidatesModal" class="modal">
     <h3>Possible Duplicate Accounts</h3>
-    <div class="tiny muted">Click a candidate to review and merge. Or skip to save as a new record.</div>
+    <div class="tiny muted">Click a candidate to review & merge. If no exact match, you may Save as New.</div>
     <div class="table-wrap" style="max-height:50vh;overflow:auto">
       <table class="cand-table">
         <thead>
@@ -199,7 +199,7 @@
       </table>
     </div>
     <div class="actions">
-      <button id="candSkipBtn" class="primary" type="button">Skip & Save New</button>
+      <button id="candSkipBtn" class="primary" type="button">Save New</button>
       <button id="candCloseBtn" class="secondary" type="button">Cancel</button>
     </div>
   </dialog>
@@ -234,10 +234,15 @@
     </div>
   </dialog>
 
-  <footer>
-    <span>Brand placeholders active · Demo only · © 2025</span>
-  </footer>
+  <!-- <footer>
+    <span>Duplicate Account Alignment Demo · by Jeevan & Devadharshini  · © 2025</span>
+  </footer> -->
 
+  <footer class="app-footer">
+    <p>Duplicate Account Allignment</p>
+    <p>Developed by Jeevan B & K Devadharshini with Michelle Winchester, Apurv Anand, Ashley Johann, Kate Young </p>
+    <p><small>PowerSchool © 2025 Unified Talent. All rights reserved.</small></p>
+  </footer>
   <script src="app.js" defer></script>
 </body>
 </html>
